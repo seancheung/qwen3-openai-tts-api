@@ -1,0 +1,29 @@
+services:
+  qwen3-cuda:
+    image: ghcr.io/seancheung/qwen3-openai-tts-api:cuda-latest
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./voices:/voices:ro
+      - ./hf_cache:/root/.cache/huggingface
+    environment:
+      QWEN3_MODEL: "Qwen/Qwen3-TTS-12Hz-1.7B-Base"
+      QWEN3_DEVICE: "cuda"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  qwen3-cpu:
+    image: ghcr.io/seancheung/qwen3-openai-tts-api:latest
+    ports:
+      - "8010:8000"
+    volumes:
+      - ./voices:/voices:ro
+      - ./hf_cache:/root/.cache/huggingface
+    environment:
+      QWEN3_MODEL: "Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice"
+      QWEN3_DEVICE: "cpu"

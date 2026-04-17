@@ -1,0 +1,57 @@
+FROM nvidia/cuda:12.4.1-cudnn-runtime-ubuntu22.04
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    HF_HOME=/root/.cache/huggingface \
+    HF_HUB_ENABLE_HF_TRANSFER=1 \
+    PIP_NO_CACHE_DIR=1
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        python3.10 \
+        python3.10-venv \
+        python3-pip \
+        git \
+        ffmpeg \
+        libsndfile1 \
+        sox \
+        libsox-dev \
+        ca-certificates \
+    && ln -sf /usr/bin/python3.10 /usr/local/bin/python \
+    && ln -sf /usr/bin/python3.10 /usr/local/bin/python3 \
+    && python -m pip install --upgrade pip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Qwen3-TTS needs torch>=2.0; pinning to 2.5.1 + CUDA 12.4 to match runtime libs.
+RUN pip install --index-url https://download.pytorch.org/whl/cu124 \
+        torch==2.5.1 torchaudio==2.5.1
+
+WORKDIR /opt/api
+
+# Install Qwen3-TTS from the local submodule; its pyproject pulls
+# transformers==4.57.3, accelerate==1.12.0, librosa, soundfile, sox, onnxruntime,
+# einops, and gradio.
+COPY Qwen3-TTS /opt/api/Qwen3-TTS
+RUN pip install /opt/api/Qwen3-TTS && \
+    pip install hf_transfer
+
+# Best-effort install of flash-attn. If the prebuilt wheel can't be resolved on
+# this CUDA/torch/python combo the build continues — the engine will fall back
+# to SDPA at runtime, which still works, just slower and with more VRAM.
+RUN pip install --no-build-isolation flash-attn==2.7.3 || \
+    echo "flash-attn install failed; engine will fall back to sdpa at runtime"
+
+COPY docker/requirements.api.txt /tmp/requirements.api.txt
+RUN pip install -r /tmp/requirements.api.txt
+
+COPY app /opt/api/app
+COPY docker/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+VOLUME ["/voices", "/root/.cache/huggingface"]
+
+EXPOSE 8000
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["uvicorn", "app.server:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -60,7 +60,7 @@ GPU 版本（推荐——1.7B 在 bf16 + flash-attn 下约需 10 GB 显存，不
 ```bash
 docker run --rm -p 8000:8000 --gpus all \
   -v $PWD/voices:/voices:ro \
-  -v $PWD/hf_cache:/root/.cache/huggingface \
+  -v $PWD/cache:/root/.cache \
   ghcr.io/seancheung/qwen3-openai-tts-api:cuda-latest
 ```
 
@@ -69,12 +69,12 @@ CPU 版本（实际上只能跑小模型，而且非常慢）：
 ```bash
 docker run --rm -p 8000:8000 \
   -v $PWD/voices:/voices:ro \
-  -v $PWD/hf_cache:/root/.cache/huggingface \
+  -v $PWD/cache:/root/.cache \
   -e QWEN3_MODEL=Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice \
   ghcr.io/seancheung/qwen3-openai-tts-api:latest
 ```
 
-首次启动会从 HuggingFace 下载模型权重（1.7B 约 3.5 GB、0.6B 约 1.3 GB）。挂载 `/root/.cache/huggingface` 可让权重在容器重启后复用。
+首次启动会从 HuggingFace 下载模型权重（1.7B 约 3.5 GB、0.6B 约 1.3 GB）。挂载 `/root/.cache` 可让权重在容器重启后复用。
 
 > **GPU 要求**：宿主机需安装 NVIDIA 驱动与 [nvidia-container-toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html)。Windows 需 Docker Desktop + WSL2 + NVIDIA Windows 驱动。
 

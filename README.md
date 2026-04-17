@@ -60,7 +60,7 @@ GPU (recommended — 1.7B needs ~10 GB VRAM with bfloat16 + flash-attn, ~14 GB w
 ```bash
 docker run --rm -p 8000:8000 --gpus all \
   -v $PWD/voices:/voices:ro \
-  -v $PWD/hf_cache:/root/.cache/huggingface \
+  -v $PWD/cache:/root/.cache \
   ghcr.io/seancheung/qwen3-openai-tts-api:cuda-latest
 ```
 
@@ -69,12 +69,12 @@ CPU (only small models are realistic; inference is slow):
 ```bash
 docker run --rm -p 8000:8000 \
   -v $PWD/voices:/voices:ro \
-  -v $PWD/hf_cache:/root/.cache/huggingface \
+  -v $PWD/cache:/root/.cache \
   -e QWEN3_MODEL=Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice \
   ghcr.io/seancheung/qwen3-openai-tts-api:latest
 ```
 
-Model weights (1.7B ≈ 3.5 GB, 0.6B ≈ 1.3 GB) are pulled from HuggingFace on first start. Mounting `/root/.cache/huggingface` persists them across container restarts.
+Model weights (1.7B ≈ 3.5 GB, 0.6B ≈ 1.3 GB) are pulled from HuggingFace on first start. Mounting `/root/.cache` persists them across container restarts.
 
 > **GPU prerequisites**: NVIDIA driver + [nvidia-container-toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html) on Linux. On Windows use Docker Desktop + WSL2 + NVIDIA Windows driver; no host CUDA toolkit required.
 
